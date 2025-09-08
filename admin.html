@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <title>অ্যাডমিন নোটিফিকেশন</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 25px; line-height: 1.6; background-color: #f4f7f9; color: #333; }
+        .container { max-width: 700px; margin: 0 auto; background-color: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        h1 { color: #1a73e8; }
+        p { color: #555; }
+        pre { background-color: #e8f0fe; padding: 15px; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word; border: 1px solid #d1e0ff; color: #333; }
+        b { color: #d9534f; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>অর্ডার নোটিফিকেশনস</h1>
+        <p>রিয়েল-টাইম অর্ডার অ্যালার্ট পেতে অনুগ্রহ করে নোটিফিকেশনের অনুমতি দিন।</p>
+        <p>অনুমতি দেওয়ার পর, নিচের বক্সে একটি টোকেন দেখতে পাবেন। <b>এই সম্পূর্ণ টোকেনটি কপি করে আপনার `Code.gs` ফাইলের `ADMIN_DEVICE_TOKEN` ভেরিয়েবলে পেস্ট করুন।</b></p>
+        <pre id="fcm-token">Loading token...</pre>
+    </div>
+
+    <!-- Firebase SDK (v9+ modular) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+        import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-messaging.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCw_74e6WGOeMIrCRc1SXkgKdsJFT5N6aQ",
+            authDomain: "my-shop-notifications.firebaseapp.com",
+            projectId: "my-shop-notifications",
+            storageBucket: "my-shop-notifications.firebasestorage.app",
+            messagingSenderId: "932775608294",
+            appId: "1:932775608294:web:1dbb59ab7608ee77f72027",
+            measurementId: "G-ZB5MPGVN4N"
+        };
+        
+        // VAPID key
+        const vapidKey = 'BKlWn4ZTxPZVohtOSSdcbfBo2teX8a4Cj4i0mekxWYX1CgzoTKPV4C5FSnqOw-uF4daVUpAHWAVdR-TuTEg6r4E';
+        
+        // Service worker file path
+        const serviceWorkerUrl = 'firebase-messaging-sw.js';
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const messaging = getMessaging(app);
+
+        async function registerServiceWorkerAndGetToken() {
+            try {
+                if ('serviceWorker' in navigator) {
+                    const registration = await navigator.serviceWorker.register(serviceWorkerUrl);
+                    console.log('Service Worker registered with scope:', registration.scope);
+                    
+                    console.log('Requesting permission...');
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                        console.log('Notification permission granted.');
+                        // Get FCM token
+                        const currentToken = await getToken(messaging, { 
+                            vapidKey: vapidKey,
+                            serviceWorkerRegistration: registration
+                        });
+
+                        if (currentToken) {
+                            console.log('FCM Token:', currentToken);
+                            document.getElementById('fcm-token').textContent = currentToken;
+                        } else {
+                            document.getElementById('fcm-token').textContent = 'টোকেন পেতে ব্যর্থ। অনুগ্রহ করে নোটিফিকেশন অ্যালাউ করে রিফ্রেশ করুন।';
+                        }
+                    } else {
+                        document.getElementById('fcm-token').textContent = 'নোটিফিকেশনের অনুমতি দেওয়া হয়নি।';
+                    }
+                }
+            } catch (err) {
+                console.error('একটি ত্রুটি ঘটেছে:', err);
+                document.getElementById('fcm-token').textContent = 'Error: ' + err.message;
+            }
+        }
+
+        registerServiceWorkerAndGetToken();
+    </script>
+    
+    <!-- Inline Service Worker Script -->
+    <script>
+        // Service worker registration with blob URL
+        if ('serviceWorker' in navigator) {
+            const serviceWorkerCode = `
+                importScripts("https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js");
+                importScripts("https://www.gstatic.com/firebasejs/9.6.10/firebase-messaging-compat.js");
+
+                firebase.initializeApp({
+                    apiKey: "AIzaSyCw_74e6WGOeMIrCRc1SXkgKdsJFT5N6aQ",
+                    authDomain: "my-shop-notifications.firebaseapp.com",
+                    projectId: "my-shop-notifications",
+                    storageBucket: "my-shop-notifications.firebasestorage.app",
+                    messagingSenderId: "932775608294",
+                    appId: "1:932775608294:web:1dbb59ab7608ee77f72027",
+                    measurementId: "G-ZB5MPGVN4N"
+                });
+
+                const messaging = firebase.messaging();
+
+                // Background Notification Handling
+                messaging.onBackgroundMessage(function(payload) {
+                    console.log('Background message received:', payload);
+                    self.registration.showNotification(
+                        payload.notification.title,
+                        {
+                            body: payload.notification.body,
+                            icon: payload.notification.icon || '/icon.png'
+                        }
+                    );
+                });
+            `;
+
+            // Create a blob URL for the service worker
+            const blob = new Blob([serviceWorkerCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+
+            // Update the service worker URL for the main script
+            document.querySelector('script[type="module"]').addEventListener('load', function() {
+                window.serviceWorkerUrl = swUrl;
+            });
+        }
+    </script>
+</body>
+</html>
