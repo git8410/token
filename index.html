@@ -25,7 +25,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
         import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-messaging.js";
 
-        // Firebase configuration
+        // আপনার Firebase প্রজেক্টের কনফিগারেশন কোড
         const firebaseConfig = {
             apiKey: "AIzaSyCw_74e6WGOeMIrCRc1SXkgKdsJFT5N6aQ",
             authDomain: "my-shop-notifications.firebaseapp.com",
@@ -36,13 +36,14 @@
             measurementId: "G-ZB5MPGVN4N"
         };
         
-        // VAPID key
+        // আপনার VAPID কী
         const vapidKey = 'BKlWn4ZTxPZVohtOSSdcbfBo2teX8a4Cj4i0mekxWYX1CgzoTKPV4C5FSnqOw-uF4daVUpAHWAVdR-TuTEg6r4E';
         
-        // Service worker file path
-        const serviceWorkerUrl = 'firebase-messaging-sw.js';
+        // আপনার সার্ভারে থাকা সার্ভিস ওয়ার্কার ফাইলের সঠিক পাথ
+        // যেহেতু ফাইলটি একই ফোল্ডারে থাকবে, তাই শুধু ফাইলের নাম দিলেই হবে।
+       
 
-        // Initialize Firebase
+        // Firebase শুরু করা হচ্ছে
         const app = initializeApp(firebaseConfig);
         const messaging = getMessaging(app);
 
@@ -56,7 +57,7 @@
                     const permission = await Notification.requestPermission();
                     if (permission === 'granted') {
                         console.log('Notification permission granted.');
-                        // Get FCM token
+                        // টোকেন পাওয়ার জন্য অনুরোধ করা হচ্ছে
                         const currentToken = await getToken(messaging, { 
                             vapidKey: vapidKey,
                             serviceWorkerRegistration: registration
@@ -79,50 +80,42 @@
         }
 
         registerServiceWorkerAndGetToken();
-    </script>
-    
-    <!-- Inline Service Worker Script -->
-    <script>
-        // Service worker registration with blob URL
-        if ('serviceWorker' in navigator) {
-            const serviceWorkerCode = `
-                importScripts("https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js");
-                importScripts("https://www.gstatic.com/firebasejs/9.6.10/firebase-messaging-compat.js");
+        
+    // আপনার সার্ভারে থাকা সার্ভিস ওয়ার্কার ফাইলের সঠিক পাথ
+        // যেহেতু ফাইলটি একই ফোল্ডারে থাকবে, তাই শুধু ফাইলের নাম দিলেই হবে।    
+        
+        // firebase-messaging-sw.js
+importScripts("https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/9.6.10/firebase-messaging-compat.js");
 
-                firebase.initializeApp({
-                    apiKey: "AIzaSyCw_74e6WGOeMIrCRc1SXkgKdsJFT5N6aQ",
-                    authDomain: "my-shop-notifications.firebaseapp.com",
-                    projectId: "my-shop-notifications",
-                    storageBucket: "my-shop-notifications.firebasestorage.app",
-                    messagingSenderId: "932775608294",
-                    appId: "1:932775608294:web:1dbb59ab7608ee77f72027",
-                    measurementId: "G-ZB5MPGVN4N"
-                });
+firebase.initializeApp({
+  apiKey: "AIzaSyCw_74e6WGOeMIrCRc1SXkgKdsJFT5N6aQ",
+  authDomain: "my-shop-notifications.firebaseapp.com",
+  projectId: "my-shop-notifications",
+  storageBucket: "my-shop-notifications.firebasestorage.app",
+  messagingSenderId: "932775608294",
+  appId: "1:932775608294:web:1dbb59ab7608ee77f72027",
+  measurementId: "G-ZB5MPGVN4N"
+});
 
-                const messaging = firebase.messaging();
+const messaging = firebase.messaging();
 
-                // Background Notification Handling
-                messaging.onBackgroundMessage(function(payload) {
-                    console.log('Background message received:', payload);
-                    self.registration.showNotification(
-                        payload.notification.title,
-                        {
-                            body: payload.notification.body,
-                            icon: payload.notification.icon || '/icon.png'
-                        }
-                    );
-                });
-            `;
+// Foreground/Background Notification Handling
+messaging.onBackgroundMessage(function(payload) {
+  console.log('Background message received:', payload);
+  self.registration.showNotification(
+    payload.notification.title,
+    {
+      body: payload.notification.body,
+      icon: payload.notification.icon || '/icon.png'
+    }
+  );
+});
 
-            // Create a blob URL for the service worker
-            const blob = new Blob([serviceWorkerCode], { type: 'application/javascript' });
-            const swUrl = URL.createObjectURL(blob);
-
-            // Update the service worker URL for the main script
-            document.querySelector('script[type="module"]').addEventListener('load', function() {
-                window.serviceWorkerUrl = swUrl;
-            });
-        }
+        
+        
+        
     </script>
 </body>
 </html>
+
